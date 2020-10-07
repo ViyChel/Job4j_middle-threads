@@ -1,6 +1,7 @@
 package ru.job4j.sync;
 
 import java.io.*;
+import java.util.function.Predicate;
 
 /**
  * Class ParseFile.
@@ -20,24 +21,10 @@ public class ParseFile {
         return file;
     }
 
-    public synchronized String getContent() {
+    public synchronized String getContent(Predicate<Integer> hex) {
         String result = "";
         try (BufferedReader input = new BufferedReader(new FileReader(file))) {
-            result = getData(1, input);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
-
-    public synchronized String getContentWithoutUnicode() {
-        String result = "";
-        try (BufferedReader input = new BufferedReader(new FileReader(file))) {
-            return getData(0x80, input);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            result = getData(hex, input);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -52,34 +39,12 @@ public class ParseFile {
         }
     }
 
-/*    private String getData(int hex, Reader input) throws IOException {
+    private String getData(Predicate<Integer> predicate, Reader input) throws IOException {
         StringBuilder result = new StringBuilder();
         int data;
         while ((data = input.read()) != -1) {
-            if (hex != 0x80) {
+            if (predicate.test(data)) {
                 result.append((char) data);
-            } else {
-                if (data < hex) {
-                    result.append((char) data);
-                }
-            }
-        }
-        return result.toString();
-    }*/
-
-    private String getData(int hex, BufferedReader input) throws IOException {
-        StringBuilder result = new StringBuilder();
-        if (hex != 0x80) {
-            String data;
-            while ((data = input.readLine()) != null) {
-                result.append(data);
-            }
-        } else {
-            int data;
-            while ((data = input.read()) != -1) {
-                if (data < 0x80) {
-                    result.append((char) data);
-                }
             }
         }
         return result.toString();
