@@ -16,15 +16,23 @@ import java.util.Queue;
 @ThreadSafe
 public class SimpleBlockingQueue<T> {
     @GuardedBy("this")
-    private Queue<T> queue = new LinkedList<>();
+    private final Queue<T> queue = new LinkedList<>();
     private final int bound;
+
+    public SimpleBlockingQueue() {
+        this.bound = 10;
+    }
 
     public SimpleBlockingQueue(final int bound) {
         this.bound = bound;
     }
 
+    public synchronized boolean isEmpty() {
+        return queue.isEmpty();
+    }
+
     public synchronized void offer(T value) {
-        while (queue.size() == bound) {
+        while (queue.size() >= bound) {
             try {
                 wait();
             } catch (InterruptedException e) {
@@ -36,17 +44,16 @@ public class SimpleBlockingQueue<T> {
     }
 
     public synchronized T poll() {
-        T result = null;
-        try {
-            while (queue.isEmpty()) {
-                System.out.println(Thread.currentThread().getName() + " waiting");
+        T value;
+        while (isEmpty()) {
+            try {
                 wait();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
-            result = queue.poll();
-            notifyAll();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
         }
-        return result;
+        value = queue.poll();
+        notifyAll();
+        return value;
     }
 }
